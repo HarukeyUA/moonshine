@@ -124,6 +124,8 @@ pub(crate) struct CompositorContext {
 	pub hdr: bool,
 	/// Per-application override of `steam_mode`.
 	pub steam_mode: Option<bool>,
+	/// Per-application fractional scale offered to Wayland clients.
+	pub scale: Option<f64>,
 }
 
 /// Information sent from the compositor thread once XWayland is ready.
@@ -166,6 +168,7 @@ impl From<&SessionContext> for CompositorContext {
 			refresh_rate: ctx.refresh_rate,
 			hdr: ctx.hdr,
 			steam_mode: ctx.application.steam_mode,
+			scale: ctx.application.scale,
 		}
 	}
 }
@@ -230,6 +233,18 @@ impl LaunchedCompositor {
 	}
 	pub fn hdr(&self) -> bool {
 		self.ready.hdr
+	}
+}
+
+/// The application's `scale`, or 1.0 when unset or out of range.
+fn client_scale(scale: Option<f64>) -> f64 {
+	match scale {
+		None => 1.0,
+		Some(scale) if scale.is_finite() && (0.5..=4.0).contains(&scale) => scale,
+		Some(scale) => {
+			tracing::warn!("Ignoring application scale {scale}: it must be between 0.5 and 4.0.");
+			1.0
+		},
 	}
 }
 
@@ -419,6 +434,7 @@ fn run_compositor(
 		context.steam_mode.unwrap_or(config.steam_mode),
 		config.virtual_connector_strategy,
 		config.keyboard.clone(),
+		client_scale(context.scale),
 	);
 
 	// Insert the Wayland display as a calloop event source so client
@@ -538,4 +554,19 @@ fn run_compositor(
 /// Delegates to the shared implementation in the healthcheck module.
 fn find_render_node(gpu_config: &Option<String>) -> Result<std::path::PathBuf, String> {
 	crate::healthcheck::find_render_node(gpu_config)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::client_scale;
+
+	#[test]
+	fn client_scale_defaults_and_rejects_out_of_range() {
+		assert_eq!(client_scale(None), 1.0);
+		assert_eq!(client_scale(Some(2.0)), 2.0);
+		assert_eq!(client_scale(Some(1.25)), 1.25);
+		assert_eq!(client_scale(Some(0.0)), 1.0);
+		assert_eq!(client_scale(Some(10.0)), 1.0);
+		assert_eq!(client_scale(Some(f64::NAN)), 1.0);
+	}
 }

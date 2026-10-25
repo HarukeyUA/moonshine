@@ -22,10 +22,11 @@ use smithay::reexports::wayland_server::protocol::wl_buffer;
 use smithay::reexports::wayland_server::protocol::wl_output::WlOutput;
 use smithay::reexports::wayland_server::protocol::wl_seat::WlSeat;
 use smithay::reexports::wayland_server::protocol::wl_surface::WlSurface;
-use smithay::utils::{Logical, Point, Rectangle, Serial};
+use smithay::utils::{Logical, Point, Rectangle, Serial, Size};
 use smithay::wayland::buffer::BufferHandler;
 use smithay::wayland::compositor::{CompositorClientState, CompositorHandler, CompositorState, is_sync_subsurface};
 use smithay::wayland::dmabuf::{DmabufGlobal, DmabufHandler, DmabufState, ImportNotifier};
+use smithay::wayland::fractional_scale::{FractionalScaleHandler, with_fractional_scale};
 use smithay::wayland::output::OutputHandler;
 use smithay::wayland::pointer_constraints::{ConstraintRemove, PointerConstraintsHandler, with_pointer_constraint};
 use smithay::wayland::selection::SelectionHandler;
@@ -415,10 +416,11 @@ impl CompositorHandler for MoonshineCompositor {
 			// configure (output not enabled yet); re-send it on each
 			// mismatched commit so nested compositors adopt the session size.
 			if let Some(toplevel) = window.toplevel()
-				&& window.geometry().size != (self.width as i32, self.height as i32).into()
+				&& window.geometry().size != self.toplevel_size()
 			{
+				let size = self.toplevel_size();
 				toplevel.with_pending_state(|state| {
-					state.size = Some((self.width as i32, self.height as i32).into());
+					state.size = Some(size);
 				});
 				toplevel.send_configure();
 			}
@@ -485,6 +487,17 @@ impl MoonshineCompositor {
 	/// The output rectangle, which every fullscreen window is held at.
 	pub(crate) fn output_rect(&self) -> Rectangle<i32, Logical> {
 		Rectangle::new((0, 0).into(), (self.width as i32, self.height as i32).into())
+	}
+
+	/// The size xdg toplevels are configured at: the output size divided by
+	/// the client scale. Output scaling fits a smaller toplevel back to the
+	/// output.
+	pub(crate) fn toplevel_size(&self) -> Size<i32, Logical> {
+		(
+			(self.width as f64 / self.client_scale).round() as i32,
+			(self.height as f64 / self.client_scale).round() as i32,
+		)
+			.into()
 	}
 
 	/// Helper to read an X11 window property via `X11Focus`, returning a
@@ -1812,8 +1825,9 @@ impl XdgShellHandler for MoonshineCompositor {
 		// blocks indefinitely waiting for the compositor to propose a
 		// size. Don't claim Maximized: Wine then treats the window as a
 		// maximized, decorated Win32 window and draws its own frame.
+		let size = self.toplevel_size();
 		surface.with_pending_state(|state| {
-			state.size = Some((self.width as i32, self.height as i32).into());
+			state.size = Some(size);
 		});
 		surface.send_configure();
 
@@ -1900,9 +1914,10 @@ impl XdgShellHandler for MoonshineCompositor {
 	fn unfullscreen_request(&mut self, surface: ToplevelSurface) {
 		// Keep filling the output after leaving fullscreen; toplevels are no
 		// longer marked Maximized, which used to guarantee this.
+		let size = self.toplevel_size();
 		surface.with_pending_state(|state| {
 			state.states.unset(XdgToplevelState::Fullscreen);
-			state.size = Some((self.width as i32, self.height as i32).into());
+			state.size = Some(size);
 		});
 		surface.send_configure();
 
@@ -1941,6 +1956,28 @@ impl XdgShellHandler for MoonshineCompositor {
 
 	fn reposition_request(&mut self, _surface: PopupSurface, _positioner: PositionerState, _token: u32) {
 		// Repositioning can be added later.
+	}
+}
+
+// -- Fractional Scale Handler --
+
+impl FractionalScaleHandler for MoonshineCompositor {
+	fn new_fractional_scale(&mut self, surface: WlSurface) {
+		let scale = self.client_scale;
+		smithay::wayland::compositor::with_states(&surface, |states| {
+			with_fractional_scale(states, |fractional_scale| fractional_scale.set_preferred_scale(scale));
+		});
+
+		// Clients may apply a new scale only with the next configure (kwin's
+		// nested backend does), so re-send it if the first one already went out.
+		if let Some(toplevel) = self
+			.space
+			.elements()
+			.find_map(|w| w.toplevel().filter(|t| *t.wl_surface() == surface).cloned())
+			&& toplevel.is_initial_configure_sent()
+		{
+			toplevel.send_configure();
+		}
 	}
 }
 

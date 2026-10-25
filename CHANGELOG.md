@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support nested desktop compositors: advertise `wp_single_pixel_buffer` (required by KDE Plasma's kwin) and `xdg-decoration` with server-side decorations, so nested compositors such as COSMIC draw no title bar that offsets the output and cursor.
 - Add a per-application `steam_mode` option overriding `compositor.steam_mode`, so non-Steam applications such as a nested desktop get focus and keyboard input.
+- Add a per-application `scale` option, offered to Wayland clients through `wp_fractional_scale_v1`, so a nested desktop such as KDE Plasma can scale its UI. Toplevels are configured at the stream size divided by the scale and fitted back to the stream.
 
 ### Fixed
 

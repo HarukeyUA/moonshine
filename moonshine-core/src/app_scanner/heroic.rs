@@ -256,6 +256,7 @@ pub(crate) fn scan_heroic_applications(config: &HeroicApplicationScannerConfig) 
 				stderr: config.stderr.clone(),
 				launch_timeout_secs: config.launch_timeout_secs,
 				steam_mode: None,
+				scale: None,
 			};
 
 			applications.push(application);

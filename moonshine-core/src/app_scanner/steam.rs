@@ -104,6 +104,7 @@ pub(crate) fn scan_steam_applications(config: &SteamApplicationScannerConfig) ->
 				stderr: config.stderr.clone(),
 				launch_timeout_secs: config.launch_timeout_secs,
 				steam_mode: None,
+				scale: None,
 			};
 
 			// Search for boxart.

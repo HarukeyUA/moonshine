@@ -328,6 +328,11 @@ pub(crate) struct MoonshineCompositor {
 	/// strategy to `SteamControlled` and enables Steam window filtering.
 	pub steam_mode: bool,
 
+	/// Fractional scale offered to Wayland clients (1.0 when unset). Toplevels
+	/// are configured at the stream size divided by it; output scaling fits
+	/// them back to the stream.
+	pub client_scale: f64,
+
 	/// Focus split strategy (gamescope's `backend_virtual_connector_strategy`).
 	pub virtual_connector_strategy: super::VirtualConnectorStrategy,
 
@@ -500,6 +505,7 @@ impl MoonshineCompositor {
 		steam_mode: bool,
 		virtual_connector_strategy: super::VirtualConnectorStrategy,
 		keyboard_config: KeyboardConfig,
+		client_scale: f64,
 	) -> (Self, Display<Self>) {
 		let compositor_state = CompositorState::new_v6::<Self>(&display_handle);
 		let shm_state = ShmState::new::<Self>(&display_handle, vec![]);
@@ -518,6 +524,11 @@ impl MoonshineCompositor {
 		smithay::wayland::single_pixel_buffer::SinglePixelBufferState::new::<Self>(&display_handle);
 		// Lets nested compositors and toolkits skip client-side title bars.
 		smithay::wayland::shell::xdg::decoration::XdgDecorationState::new::<Self>(&display_handle);
+		// Only offered when the application asks for a scale, so other
+		// clients keep picking their own.
+		if client_scale != 1.0 {
+			smithay::wayland::fractional_scale::FractionalScaleManagerState::new::<Self>(&display_handle);
+		}
 		let clock = Clock::new();
 
 		let mut xkb_config = XkbConfig::default();
@@ -695,6 +706,7 @@ impl MoonshineCompositor {
 				wayland_display,
 				hdr: hdr_active,
 				steam_mode,
+				client_scale,
 				virtual_connector_strategy,
 				override_surface: None,
 				override_reported_window: 0,

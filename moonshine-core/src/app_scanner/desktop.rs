@@ -150,6 +150,7 @@ fn parse_desktop_application(
 		stderr: config.stderr.clone(),
 		launch_timeout_secs: config.launch_timeout_secs,
 		steam_mode: None,
+		scale: None,
 	}))
 }
 

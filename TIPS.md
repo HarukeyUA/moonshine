@@ -170,6 +170,8 @@ Launching a desktop environment as an application turns the stream into a full r
 
 `steam_mode = false` lets the desktop get focus and keyboard input: with Steam mode on (the default), only Steam and Steam game windows can.
 
+To scale the desktop's UI, set `scale` (between 0.5 and 4.0, e.g. `scale = 2.0` for a HiDPI client). Moonshine offers it to the desktop through `wp_fractional_scale_v1` and configures the desktop at the stream size divided by the scale, then fits it back to the stream. A nested KWin takes its scale only from this; its own display settings have no effect.
+
 ## Debug a failing application
 
 ### How to

@@ -53,6 +53,13 @@ pub struct ApplicationConfig {
 	/// desktop, which Steam's window filtering would otherwise never focus.
 	#[serde(default, skip_serializing_if = "Option::is_none")]
 	pub steam_mode: Option<bool>,
+
+	/// Scale factor offered to the application's Wayland clients through
+	/// `wp_fractional_scale_v1`, e.g. `2.0` or `1.5`. Toplevels are configured
+	/// at the stream size divided by this factor and scaled back up to fill the
+	/// stream, so a nested desktop renders its UI at that scale. Unset means 1.
+	#[serde(default, skip_serializing_if = "Option::is_none")]
+	pub scale: Option<f64>,
 }
 
 impl Default for ApplicationConfig {
@@ -67,6 +74,7 @@ impl Default for ApplicationConfig {
 			stderr: None,
 			launch_timeout_secs: default_launch_timeout(),
 			steam_mode: None,
+			scale: None,
 		}
 	}
 }
@@ -846,5 +854,14 @@ mod tests {
 		let off: super::ApplicationConfig =
 			toml::from_str("title = \"Desktop\"\ncommand = [\"d\"]\nsteam_mode = false").unwrap();
 		assert_eq!(off.steam_mode, Some(false));
+	}
+
+	#[test]
+	fn test_scale_is_optional() {
+		let unset: super::ApplicationConfig = toml::from_str("title = \"Game\"\ncommand = [\"game\"]").unwrap();
+		assert_eq!(unset.scale, None);
+		let scaled: super::ApplicationConfig =
+			toml::from_str("title = \"Desktop\"\ncommand = [\"d\"]\nscale = 1.5").unwrap();
+		assert_eq!(scaled.scale, Some(1.5));
 	}
 }
