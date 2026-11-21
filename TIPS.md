@@ -229,6 +229,8 @@ Launching a desktop environment as an application turns the stream into a full r
 
 Leave Steam integration off (the default) for a desktop: with `steam_integration = true`, only Steam and Steam game windows get focus and keyboard input.
 
+To scale the desktop's UI, set `scale` (between 0.5 and 4.0, e.g. `scale = 2.0` for a HiDPI client). Moonshine offers it to the desktop through `wp_fractional_scale_v1` and gives the desktop the stream's resolution divided by the scale, then scales it back to fill the stream. A nested KWin takes its scale only from this; its own display settings have no effect.
+
 Run a nested compositor as a Wayland client, not as an X11 client. Moonshine's compositor gives a Wayland window the stream's resolution, but it keeps an X11 window at the size the window asks for and scales it to the stream, as it does for games. COSMIC's compositor uses its X11 backend when `DISPLAY` is set, and its X11 window asks for 1280x800, so the desktop stays at 1280x800 whatever the stream's resolution. `COSMIC_BACKEND = "winit"` makes it use its Wayland backend instead.
 
 ## Debug a failing application

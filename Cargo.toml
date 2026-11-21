@@ -108,3 +108,8 @@ zvariant = "5.12.0"
 
 [dev-dependencies]
 tempfile = "3.27.0"
+
+# The applications' `scale` option needs `CompositorConfig::scale`, which no
+# ferriscope release has yet.
+[patch.crates-io]
+ferriscope = { git = "https://github.com/HarukeyUA/ferriscope", branch = "client-scale" }

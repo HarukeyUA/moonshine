@@ -220,6 +220,7 @@ pub(crate) fn scan_faugus_applications(config: &FaugusApplicationScannerConfig) 
 			launch_timeout_secs: config.launch_timeout_secs,
 			env: config.env.clone(),
 			steam_integration: false,
+			scale: None,
 		});
 	}
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a `scale` option to applications: a fractional scale for a desktop environment run as an application, such as a nested KWin. It needs `CompositorConfig::scale`, which is in the ferriscope fork this branch builds against.
+
 ## [v0.19.0] - 21-11-2026
 
 ### Added

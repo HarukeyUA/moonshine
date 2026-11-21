@@ -65,6 +65,14 @@ pub struct ApplicationConfig {
 	#[serde(default, skip_serializing_if = "std::ops::Not::not")]
 	pub steam_integration: bool,
 
+	/// Scale offered to the application's Wayland clients through
+	/// `wp_fractional_scale_v1`, from 0.5 to 4.0, e.g. `2.0` for a HiDPI
+	/// client. A Wayland window is configured at the stream size divided by
+	/// the scale and scaled back to fill the stream, so a nested desktop
+	/// draws its interface at that scale. Unset means 1.
+	#[serde(default, skip_serializing_if = "Option::is_none")]
+	pub scale: Option<f64>,
+
 	/// Extra environment variables for the application. They override the
 	/// variables Moonshine sets, such as `DISPLAY`.
 	#[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -84,6 +92,7 @@ impl Default for ApplicationConfig {
 			stderr: None,
 			launch_timeout_secs: default_launch_timeout(),
 			steam_integration: false,
+			scale: None,
 			env: BTreeMap::new(),
 		}
 	}
@@ -880,6 +889,14 @@ mod tests {
 		let off: ApplicationConfig =
 			toml::from_str("title = \"Desktop\"\ncommand = [\"d\"]\nsteam_integration = false").unwrap();
 		assert!(!off.steam_integration);
+	}
+
+	#[test]
+	fn test_scale_is_optional() {
+		let unset: ApplicationConfig = toml::from_str("title = \"Game\"\ncommand = [\"g\"]").unwrap();
+		assert_eq!(unset.scale, None);
+		let scaled: ApplicationConfig = toml::from_str("title = \"Desktop\"\ncommand = [\"d\"]\nscale = 1.5").unwrap();
+		assert_eq!(scaled.scale, Some(1.5));
 	}
 
 	#[test]

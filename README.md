@@ -255,6 +255,7 @@ steam_integration = true
 - `working_directory` (optional): The directory to start the application in, for example a game that loads its data from the directory it runs in. `~` and environment variables are expanded, and the directory has to exist. The `pre_command` and `post_command` commands run there too. Defaults to your home directory.
 - `pre_command` (optional): Commands to run before launching the application. Each entry is a separate command, executed in order. Runs synchronously — the session waits for all to finish.
 - `steam_integration` (optional): Steam integration, as gamescope's `-e`; off by default. Turn it on for Steam (Big Picture), so its overlay and focus work. With it on, only Steam and Steam game windows can take focus, so leave it off for anything launched directly. With it off, Steam acts as on a desktop: its power menu has "Exit Big Picture Mode", not "Switch to Desktop". Games from the Steam application scanner have it on.
+- `scale` (optional): A scale from 0.5 to 4.0 for a desktop environment run as an application, e.g. `scale = 2.0` for a HiDPI client. See [TIPS.md](TIPS.md#run-a-desktop-environment-for-a-full-remote-desktop).
 - `post_command` (optional): Commands to run after the streaming session ends. Each entry is a separate command, executed in order. Runs synchronously — the server waits for all to finish.
 
 Example:
